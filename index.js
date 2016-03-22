@@ -38,11 +38,13 @@ module.exports = function(content) {
 			throw new Error("Invalid value to config parameter attrs");
 	}
 	var root = config.root;
+	var test = config.test;
 	var links = attrParse(content, function(tag, attr) {
 		return attributes.indexOf(tag + ":" + attr) >= 0;
 	});
 	links.reverse();
 	var data = {};
+	var dataToResolve = {};
 	content = [content];
 	links.forEach(function(link) {
 		if(!loaderUtils.isUrlRequest(link.value, root)) return;
@@ -57,6 +59,11 @@ module.exports = function(content) {
 		do {
 			var ident = randomIdent();
 		} while(data[ident]);
+
+		if (test && test.test(link.value)) {
+			dataToResolve[ident] = true;
+		}
+
 		data[ident] = link.value;
 		var x = content.pop();
 		content.push(x.substr(link.start + link.length));
@@ -98,6 +105,13 @@ module.exports = function(content) {
 
 	return "module.exports = " + content.replace(/xxxHTMLLINKxxx[0-9\.]+xxx/g, function(match) {
 		if(!data[match]) return match;
+		if (config.rootUrl && dataToResolve[match]) {
+			if (typeof config.rootUrl === 'function') {
+				return url.resolve(config.rootUrl(), data[match]);
+			} else {
+				return url.resolve(config.rootUrl, data[match]);
+			}
+		}
 		return '" + require(' + JSON.stringify(loaderUtils.urlToRequest(data[match], root)) + ') + "';
 	}) + ";";
 }

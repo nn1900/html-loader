@@ -2,11 +2,16 @@
 
 Exports HTML as string. HTML is minimized when the compiler demands.
 
-By default every local `<img src="image.png">` is required (`require("./image.png")`). You may need to specify loaders for images in your configuration (recommended `file-loader` or `url-loader`).
+By default every local `<img src="image.png">` is required (`require("./image.png")`).
+You may need to specify loaders for images in your configuration (recommended `file-loader` or `url-loader`).
 
-You can specify which tag-attribute combination should be processed by this loader via the query parameter `attrs`. Pass an array or a space-separated list of `<tag>:<attribute>` combinations. (Default: `attrs=img:src`)
+You can specify which tag-attribute combination should be processed by this loader
+via the query parameter `attrs`. Pass an array or a space-separated list of `<tag>:<attribute>` combinations.
+(Default: `attrs=img:src`)
 
 To completely disable tag-attribute processing (for instance, if you're handling image loading on the client side) you can pass in `attrs=false`.
+
+You can also convert relative urls to absolute urls as you desire.
 
 ## Usage
 
@@ -34,17 +39,17 @@ With this configuration:
 ```
 
 ``` javascript
-require("html!./fileA.html");
+require("html2!./fileA.html");
 // => '<img  src="http://cdn.example.com/49e...ba9f/a9f...92ca.jpg"  data-src="image2x.png" >'
 
-require("html?attrs=img:data-src!./file.html");
+require("html2?attrs=img:data-src!./file.html");
 // => '<img  src="image.png"  data-src="data:image/png;base64,..." >'
 
-require("html?attrs=img:src img:data-src!./file.html");
-require("html?attrs[]=img:src&attrs[]=img:data-src!./file.html");
+require("html2?attrs=img:src img:data-src!./file.html");
+require("html2?attrs[]=img:src&attrs[]=img:data-src!./file.html");
 // => '<img  src="http://cdn.example.com/49e...ba9f/a9f...92ca.jpg"  data-src="data:image/png;base64,..." >'
 
-require("html?-attrs!./file.html");
+require("html2?-attrs!./file.html");
 // => '<img  src="image.jpg"  data-src="image2x.png" >'
 
 /// minimized by running `webpack --optimize-minimize`
@@ -66,10 +71,10 @@ With the same configuration above:
 
 ``` javascript
 
-require("html!./fileB.html");
+require("html2!./fileB.html");
 // => '<img  src="/image.jpg">'
 
-require("html?root=.!./fileB.html");
+require("html2?root=.!./fileB.html");
 // => '<img  src="http://cdn.example.com/49e...ba9f/a9f...92ca.jpg">'
 
 ```
@@ -79,7 +84,7 @@ require("html?root=.!./fileB.html");
 You can use `interpolate` flag to enable interpolation syntax for ES6 template strings, like so:
 
 ```
-require("html?interpolate!./file.html");
+require("html2?interpolate!./file.html");
 ```
 
 ```
@@ -98,7 +103,7 @@ module.exports = {
     loaders: [
       {
         test: /\.html$/,
-        loader: "html"
+        loader: "html2"
       }
     ]
   }
@@ -108,7 +113,7 @@ module.exports = {
 };
 ```
 
-If you need to define two different loader configs, you can also change the config's property name via `html?config=otherHtmlLoaderConfig`:
+If you need to define two different loader configs, you can also change the config's property name via `html2?config=otherHtmlLoaderConfig`:
 
 ```javascript
 module.exports = {
@@ -117,12 +122,55 @@ module.exports = {
     loaders: [
       {
         test: /\.html$/,
-        loader: "html?config=otherHtmlLoaderConfig"
+        loader: "html2?config=otherHtmlLoaderConfig"
       }
     ]
   }
   otherHtmlLoaderConfig: {
     ...
+  }
+};
+```
+
+If you need to convert relative urls to absolute urls
+(in case you're developing an HTML5 app, and the html file you load contains user uploaded images),
+you can match the urls you want to convert via `test` config property,
+and via `rootUrl` config property to specify how you want to convert those interested urls:
+```javascript
+module.exports = {
+  ...
+  module: {
+    loaders: [
+      {
+        test: /\.html$/,
+        loader: "html2"
+      }
+    ]
+  }
+  htmlLoader: {
+		test: /^upload\//i,
+		rootUrl: 'http://yourserver.com/'
+  }
+};
+```
+
+you can also specify `rootUrl` as a function so that you can provide different root urls as according to different deployment target:
+```javascript
+module.exports = {
+  ...
+  module: {
+    loaders: [
+      {
+        test: /\.html$/,
+        loader: "html2"
+      }
+    ]
+  }
+  htmlLoader: {
+		test: /^upload\//i,
+		rootUrl: function() {
+			return process.env.TARGET == 'app' ? 'http://yourserver.com' : ''
+		}
   }
 };
 ```

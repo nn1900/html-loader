@@ -8,6 +8,32 @@ describe("loader", function() {
 			'module.exports = "Text <img src=\\"" + require("./image.png") + "\\"><img src=\\"" + require("bootstrap-img") + "\\"> Text";'
 		);
 	});
+	it("should convert to absolute url", function() {
+		loader.call({
+			options: {
+				htmlLoader: {
+					test: /^upload\//i,
+					rootUrl: 'http://domain.com/'
+				}
+			}
+		}, 'Text <img src="upload/image.png"><img src="~bootstrap-img"> Text').should.be.eql(
+			'module.exports = "Text <img src=\\"http://domain.com/upload/image.png\\"><img src=\\"" + require("bootstrap-img") + "\\"> Text";'
+		);
+	});
+	it("should convert to absolute url if rootUrl is a function", function() {
+		loader.call({
+			options: {
+				htmlLoader: {
+					test: /^upload\//i,
+					rootUrl: function() {
+						return 'http://domain.com/';
+					}
+				}
+			}
+		}, 'Text <img src="upload/image.png"><img src="~bootstrap-img"> Text').should.be.eql(
+			'module.exports = "Text <img src=\\"http://domain.com/upload/image.png\\"><img src=\\"" + require("bootstrap-img") + "\\"> Text";'
+		);
+	});
 	it("should accept attrs from query", function() {
 		loader.call({
 			query: "?attrs=script:src"
